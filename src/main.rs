@@ -62,7 +62,7 @@ fn main() -> Result<()> {
 
         // Splice
         let mut offset: loff_t = opt.offset; // Needs to be page aligned
-        let num_bytes = splice(fd, &mut offset, dirty_pipe_tx.as_raw_fd(), null_mut(), input_string.len(), 0);
+        let num_bytes = splice(fd, &mut offset, dirty_pipe_tx.as_raw_fd(), null_mut(), 1, 0);
         println!("Bytes spliced: {}", num_bytes);
     }
 
