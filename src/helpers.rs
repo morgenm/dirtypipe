@@ -1,8 +1,8 @@
 /*
 Miscellaneous helper functions.
 */
+use anyhow::Result;
 use std::fs;
-use anyhow::{Result};
 use std::path::PathBuf;
 
 /*
@@ -12,33 +12,39 @@ Basing version check on https://securitylabs.datadoghq.com/articles/dirty-pipe-v
 pub fn is_kernel_vuln() -> Result<bool, anyhow::Error> {
     // Read version string from /proc/version
     let proc_version = fs::read_to_string("/proc/version")?;
-    
+
     // Split to get just the kernel version
-    let release_strings = proc_version.split("Linux version ").collect::<Vec<&str>>()[1].split(" ").collect::<Vec<&str>>()[0].split("-").collect::<Vec<&str>>();
+    let release_strings = proc_version.split("Linux version ").collect::<Vec<&str>>()[1]
+        .split(" ")
+        .collect::<Vec<&str>>()[0]
+        .split("-")
+        .collect::<Vec<&str>>();
     let kernel_version = String::from(release_strings[0]) + "-" + release_strings[1];
 
     println!("[-] Kernel version: {}", kernel_version);
 
     // Split version string to check major and minor versions
     let versions: Vec<String> = kernel_version.split(".").map(|x| String::from(x)).collect();
-    if versions[0].parse::<i32>().unwrap() != 5 { // Must be Kernel 5.x
+    if versions[0].parse::<i32>().unwrap() != 5 {
+        // Must be Kernel 5.x
         return Ok(false);
     }
     if versions[1].parse::<i32>().unwrap() < 8 || versions[1].parse::<i32>().unwrap() > 16 {
-        return Ok(false)
+        return Ok(false);
     }
 
     // Check patch level
-    let patch_level = versions[2].split("-").collect::<Vec<&str>>()[0].parse::<i32>().unwrap();
+    let patch_level = versions[2].split("-").collect::<Vec<&str>>()[0]
+        .parse::<i32>()
+        .unwrap();
     let is_vuln = match versions[1].parse::<i32>().unwrap() {
         16 => patch_level < 11,
         15 => patch_level < 25,
         10 => patch_level < 102,
-        _ => true
+        _ => true,
     };
     Ok(is_vuln)
 }
-
 
 /*
 Copy a given file to /tmp. Used to backup a file before overwriting.
@@ -50,6 +56,10 @@ pub fn backup_file(target: &PathBuf) -> Result<(), anyhow::Error> {
 
     fs::copy(target, &new_path)?;
 
-    println!("[-] Backed up {} to {}", target.to_str().unwrap(), new_path.to_str().unwrap());
+    println!(
+        "[-] Backed up {} to {}",
+        target.to_str().unwrap(),
+        new_path.to_str().unwrap()
+    );
     Ok(())
 }
