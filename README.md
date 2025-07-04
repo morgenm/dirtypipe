@@ -1,5 +1,13 @@
+> **DISCLAIMER**
+>
+> This code is for **educational and research purposes only.** 
+>
+> Do not use it on systems you do not own or have permission to test.
+>
+> The author is **not responsible** for any misuse, damage, or legal consequences resulting from the use of this code.
+
 # DirtyPipe (CVE-2022-0847)
-This is an implementation of the DirtyPipe exploit I wrote in Rust based on [Max Kellermann's writeup](https://dirtypipe.cm4all.com/).
+This is an implementation of the DirtyPipe ([CVE-2022-0847](https://nvd.nist.gov/vuln/detail/cve-2022-0847)) exploit I wrote in Rust based on [Max Kellermann's writeup](https://dirtypipe.cm4all.com/).
 The program allows you to overwrite specific files or to overwrite an SUID binary in order to escalate privileges.
 
 ## Features
