@@ -11,13 +11,13 @@ Basing version check on https://securitylabs.datadoghq.com/articles/dirty-pipe-v
 */
 pub fn is_kernel_vuln() -> Result<bool, anyhow::Error> {
     // Read version string from /proc/version
-    let mut proc_version = fs::read_to_string("/proc/version")?;
+    let proc_version = fs::read_to_string("/proc/version")?;
     
     // Split to get just the kernel version
     let release_strings = proc_version.split("Linux version ").collect::<Vec<&str>>()[1].split(" ").collect::<Vec<&str>>()[0].split("-").collect::<Vec<&str>>();
     let kernel_version = String::from(release_strings[0]) + "-" + release_strings[1];
 
-    println!("Kernel version: {}", kernel_version);
+    println!("[-] Kernel version: {}", kernel_version);
 
     // Split version string to check major and minor versions
     let versions: Vec<String> = kernel_version.split(".").map(|x| String::from(x)).collect();
@@ -48,8 +48,8 @@ pub fn backup_file(target: &PathBuf) -> Result<(), anyhow::Error> {
     new_path.push("/tmp");
     new_path.push(target.file_name().unwrap());
 
-    fs::copy(target, &new_path);
+    fs::copy(target, &new_path)?;
 
-    println!("Backed up {} to {}", target.to_str().unwrap(), new_path.to_str().unwrap());
+    println!("[-] Backed up {} to {}", target.to_str().unwrap(), new_path.to_str().unwrap());
     Ok(())
 }

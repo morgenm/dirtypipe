@@ -36,10 +36,10 @@ struct Opt {
 fn main() -> Result<(), anyhow::Error> {
     // Warn if not a vulnerable kernel version
     if !helpers::is_kernel_vuln()? {
-        println!("Warning! Your kernel version does not appear vulnerable!")
+        println!("[!] Warning! Your kernel version does not appear vulnerable!")
     }
     else {
-        println!("Your kernel appears to be vulnerable.")
+        println!("[!] Your kernel appears to be vulnerable.")
     }
     
     let opt = Opt::from_args();
@@ -76,6 +76,4 @@ fn main() -> Result<(), anyhow::Error> {
              return Err(anyhow!("Mode must be overwrite or suid."));
         }
     }
-
-    Ok(())
 }
