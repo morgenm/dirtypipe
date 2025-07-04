@@ -2,7 +2,7 @@
 Miscellaneous helper functions.
 */
 use std::fs;
-use anyhow::{Result, anyhow};
+use anyhow::{Result};
 use std::path::PathBuf;
 
 /*
